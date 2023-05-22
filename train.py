@@ -22,19 +22,22 @@ val_df = pd.read_json("./data/validation.jsonl", lines=True)
 tokenizer = T5Tokenizer.from_pretrained('t5-small')
 
 #Tensor datasets:
-train_dataset = prepare_dataset(train_df, tokenizer)
-val_dataset = prepare_dataset(val_df, tokenizer)
-test_dataset = prepare_dataset(test_df, tokenizer)
+train_dataset = prepare_dataset(train_df, tokenizer, 200)
+val_dataset = prepare_dataset(val_df, tokenizer, 200)
+test_dataset = prepare_dataset(test_df, tokenizer, 200)
 
 
 # STEP 1: INSTANTIATE MODEL:
 model = T5ForConditionalGeneration.from_pretrained('t5-small')
-optimizer = AdamW(model.parameters(),
-                    lr = 1e-5
-                  )
+optimizer = AdamW(model.parameters(), lr=1e-5)
+
+dataloader = DataLoader(dataset=train_dataset,
+                        shuffle=True,
+                        batch_size=16)
+
 
 epochs = 5
-total_steps = len(train_df) * epochs
+total_steps = len(dataloader) * epochs
 scheduler = get_linear_schedule_with_warmup(optimizer,
                                             num_warmup_steps=0,
                                             num_training_steps=total_steps
@@ -54,17 +57,17 @@ def train(model, batch_size, optimizer, epochs, scheduler):
         model.train()
 
         # Create the training dataloader:
-        dataloader = DataLoader(dataset=train_dataset,
+        train_dataloader = DataLoader(dataset=train_dataset,
                                 shuffle=True,
                                 batch_size=batch_size)
 
-        for step, batch in enumerate(dataloader):
+        for step, batch in enumerate(train_dataloader):
 
             # Progress update:
             if step % 10 == 0:
-                print(f"Batch {step} of a total {len(dataloader)}")
+                print(f"Batch {step} of a total {len(train_dataloader)}")
 
-            # Unpack training batch from dataloader:
+            # Unpack training batch from train_dataloader:
             doc_input_ids, doc_attention_masks = batch[0], batch[1]
             summary_input_ids, summary_attention_masks = batch[2], batch[3]
 
@@ -93,7 +96,7 @@ def train(model, batch_size, optimizer, epochs, scheduler):
             # Update scheduler:
             scheduler.step()
 
-        avg_loss = total_loss/len(dataloader)
+        avg_loss = total_loss/len(train_dataloader)
 
         train_stats.append({ 'Training Loss': avg_loss})
 
@@ -102,18 +105,18 @@ def train(model, batch_size, optimizer, epochs, scheduler):
         print(f"{epoch} | {avg_loss}")
 
         # Create the validation dataloader:
-        dataloader = DataLoader(dataset=val_dataset,
+        val_dataloader = DataLoader(dataset=val_dataset,
                                 shuffle=False,
                                 batch_size=batch_size)
 
         total_val_loss = 0
-        for step, batch in enumerate(dataloader):
+        for step, batch in enumerate(val_dataloader):
 
             # Progress update:
             if step % 10 == 0:
-                print(f"Batch {step} of a total {len(dataloader)}")
+                print(f"Batch {step} of a total {len(val_dataloader)}")
 
-            # Unpack training batch from dataloader:
+            # Unpack training batch from val_dataloader:
             doc_input_ids, doc_attention_masks = batch[0], batch[1]
             summary_input_ids, summary_attention_masks = batch[2], batch[3]
 
@@ -133,7 +136,7 @@ def train(model, batch_size, optimizer, epochs, scheduler):
                 # Sum loss over all batches:
                 total_val_loss += loss.item()
 
-        avg_val_loss = total_val_loss / len(dataloader)
+        avg_val_loss = total_val_loss / len(val_dataloader)
         val_stats.append({'Validation Loss': avg_val_loss})
 
         print("Summary Results: ")

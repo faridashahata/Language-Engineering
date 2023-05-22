@@ -184,9 +184,9 @@ def tokenize(df, tokenizer, max_len):
 #
 # PREPARE TENSOR DATASETS: TRAIN, TEST, VAL:
 
-def prepare_dataset(df, tokenizer):
+def prepare_dataset(df, tokenizer, threshold):
 
-    threshold = 1000
+    #threshold = 1000
     df = prepare_data(df, threshold)
 
 
