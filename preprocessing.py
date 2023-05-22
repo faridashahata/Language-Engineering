@@ -17,9 +17,11 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration, AdamW
 from tqdm import tqdm, trange, tqdm_notebook
 from sklearn.metrics import matthews_corrcoef, f1_score
 
-train_df = pd.read_json("./train.jsonl", lines=True)
-test_df = pd.read_json("./test.jsonl", lines=True)
-val_df = pd.read_json("./validation.jsonl", lines=True)
+os.getcwd()
+os.chdir("/Users/faridashahata/Desktop/Language Engineering/Project")
+train_df = pd.read_json("./data/train.jsonl", lines=True)
+test_df = pd.read_json("./data/test.jsonl", lines=True)
+val_df = pd.read_json("./data/validation.jsonl", lines=True)
 
 # Mean Girls example:
 print("Sample document: ", train_df.iloc[33614].document)
