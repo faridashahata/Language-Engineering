@@ -1,25 +1,12 @@
-import preprocessing
-from preprocessing import prepare_data, tokenize, prepare_dataset
-import torch
 import pandas as pd
-import tqdm
-import csv
-import os
-import random
-from pathlib import Path
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
-from transformers import get_linear_schedule_with_warmup
-from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
-                              TensorDataset)
-from torch.utils.data.distributed import DistributedSampler
-from pytorch_transformers import RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
-#from pytorch_transformers import AdamW, WarmupLinearSchedule, T5Tokenizer
+from torch.utils.data import (DataLoader)
+# from pytorch_transformers import AdamW, WarmupLinearSchedule, T5Tokenizer
 from transformers import T5Tokenizer, T5ForConditionalGeneration, AdamW
-from tqdm import tqdm, trange, tqdm_notebook
-from sklearn.metrics import matthews_corrcoef, f1_score
+from transformers import get_linear_schedule_with_warmup
 
+import preprocessing
+from preprocessing import prepare_dataset
 
 # STEP 0: GET THE DATA:
 
@@ -27,9 +14,9 @@ train_df = pd.read_json("./data/train.jsonl", lines=True)
 test_df = pd.read_json("./data/test.jsonl", lines=True)
 val_df = pd.read_json("./data/validation.jsonl", lines=True)
 
-train_df = preprocessing.prepare_data(train_df)
-val_df = preprocessing.prepare_data(val_df)
-test_df = preprocessing.prepare_data(test_df)
+# train_df = preprocessing.prepare_data(train_df)
+# val_df = preprocessing.prepare_data(val_df)
+# test_df = preprocessing.prepare_data(test_df)
 
 
 tokenizer = T5Tokenizer.from_pretrained('t5-small')
@@ -114,59 +101,55 @@ def train(model, batch_size, optimizer, epochs, scheduler):
         print("Epoch | train Loss")
         print(f"{epoch} | {avg_loss}")
 
-    # Create the validation dataloader:
-    dataloader = DataLoader(dataset=val_dataset,
-                            shuffle=False,
-                            batch_size=batch_size)
+        # Create the validation dataloader:
+        dataloader = DataLoader(dataset=val_dataset,
+                                shuffle=False,
+                                batch_size=batch_size)
 
-    total_val_loss = 0
-    for step, batch in enumerate(dataloader):
+        total_val_loss = 0
+        for step, batch in enumerate(dataloader):
 
-        # Progress update:
-        if step % 10 == 0:
-            print(f"Batch {step} of a total {len(dataloader)}")
+            # Progress update:
+            if step % 10 == 0:
+                print(f"Batch {step} of a total {len(dataloader)}")
 
-        # Unpack training batch from dataloader:
-        doc_input_ids, doc_attention_masks = batch[0], batch[1]
-        summary_input_ids, summary_attention_masks = batch[2], batch[3]
+            # Unpack training batch from dataloader:
+            doc_input_ids, doc_attention_masks = batch[0], batch[1]
+            summary_input_ids, summary_attention_masks = batch[2], batch[3]
 
-        # Clear previously calculated gradients:
-        optimizer.zero_grad()
+            # Clear previously calculated gradients:
+            optimizer.zero_grad()
 
-        # Forward pass:
-        # with autocast():
-        with torch.no_grad():
-            outputs = model(input_ids=doc_input_ids,
-                            attention_mask=doc_attention_masks,
-                            labels=summary_input_ids,
-                            decoder_attention_mask=summary_attention_masks)
+            # Forward pass:
+            # with autocast():
+            with torch.no_grad():
+                outputs = model(input_ids=doc_input_ids,
+                                attention_mask=doc_attention_masks,
+                                labels=summary_input_ids,
+                                decoder_attention_mask=summary_attention_masks)
 
-            loss, pred_scores = outputs[:2]
+                loss, pred_scores = outputs[:2]
 
-            # Sum loss over all batches:
-            total_val_loss += loss.item()
+                # Sum loss over all batches:
+                total_val_loss += loss.item()
 
-    avg_val_loss = total_val_loss / len(dataloader)
-    val_stats.append({'Validation Loss': avg_val_loss})
+        avg_val_loss = total_val_loss / len(dataloader)
+        val_stats.append({'Validation Loss': avg_val_loss})
 
-    print("Summary Results: ")
-    print("Epoch | validation Loss")
-    print(f"{epoch} | {avg_val_loss}")
+        print("Summary Results: ")
+        print("Epoch | validation Loss")
+        print(f"{epoch} | {avg_val_loss}")
 
-    best_val_loss = float('inf')
+        best_val_loss = float('inf')
 
-    if val_stats[epoch]['Validation Loss'] < best_val_loss:
-        best_val_loss = val_stats[epoch]['Validation Loss']
-        torch.save(model.state_dict(), 't5_model.pt')
+        if val_stats[epoch]['Validation Loss'] < best_val_loss:
+            best_val_loss = val_stats[epoch]['Validation Loss']
+            torch.save(model.state_dict(), 't5_model.pt')
 
-        model.save_pretrained('./model_save/t5/')
-        tokenizer.save_pretrained('./model_save/t5/')
-
-
+            model.save_pretrained('./model_save/t5/')
+            tokenizer.save_pretrained('./model_save/t5/')
 
     return train_stats, val_stats
-
-
 
 
 train(model, 16, optimizer, epochs, scheduler)

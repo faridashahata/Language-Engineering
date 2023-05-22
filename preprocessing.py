@@ -1,21 +1,13 @@
-import torch
 import pandas as pd
-import tqdm
-import csv
 import os
-import random
-from pathlib import Path
-import matplotlib.pyplot as plt
-import numpy as np
+import re
+
+import pandas as pd
 import torch
-from torch.utils.data import (DataLoader, RandomSampler, SequentialSampler,
-                              TensorDataset)
-from torch.utils.data.distributed import DistributedSampler
-from pytorch_transformers import RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
-#from pytorch_transformers import AdamW, WarmupLinearSchedule, T5Tokenizer
-from transformers import T5Tokenizer, T5ForConditionalGeneration, AdamW
-from tqdm import tqdm, trange, tqdm_notebook
-from sklearn.metrics import matthews_corrcoef, f1_score
+from torch.utils.data import (TensorDataset)
+from tqdm import tqdm
+# from pytorch_transformers import AdamW, WarmupLinearSchedule, T5Tokenizer
+from transformers import T5Tokenizer
 
 os.getcwd()
 os.chdir("/Users/faridashahata/Desktop/Language Engineering/Project")
@@ -37,11 +29,24 @@ print("The shape of the training dataframe: ", train_df.shape)
      Add "</s>" to end of summary and document  """
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-def prepare_data(df):
+def prepare_data(df, threshold):
 
     # Lowercase the data:
     df['document'] = df['document'].apply(lambda x: x.lower())
     df['summary'] = df['summary'].apply(lambda x: x.lower())
+
+    # Clean:
+    df['document'] = df['document'].str.replace('-', ' ')
+    df['summary'] = df['summary'].str.replace('-', ' ')
+
+    df['document'] = df['document'].apply(lambda x: re.sub(r'\s([?.!"](?:\s|$))', r'\1', x))
+    df['summary'] = df['summary'].apply(lambda x: re.sub(r'\s([?.!"](?:\s|$))', r'\1', x))
+
+    # remove excess white spaces
+    df['document'] = df['document'].apply(lambda x: " ".join(x.split()))
+    df['summary'] = df['summary'].apply(lambda x: " ".join(x.split()))
+
+
 
     # Generate word counts:
     df['document_word_count'] = df['document'].apply(lambda x: len(x.split()))
@@ -54,29 +59,42 @@ def prepare_data(df):
     df['summary'] = '<pad>' + df['summary']
 
     # Add " </s>" to end of each document and summary:
-    #df['document'] = df['document'] + " </s>"
-    #df['summary'] = df['summary'] + " </s>"
+    # df['document'] = df['document'] + " </s>"
+    # df['summary'] = df['summary'] + " </s>"
+
+
+
+
 
     # Truncate data:
-    df = df[df.document_word_count <= 1000]
+    df = df[df.document_word_count <= threshold]
+
+    # Remove rows with no summary or document:
+    df = df[df.document_word_count > 0]
+    df = df[df.summary_word_count > 0]
     
     return df
 
-train_df = prepare_data(train_df)
-val_df = prepare_data(val_df)
-test_df = prepare_data(test_df)
+# train_df = prepare_data(train_df)
+# val_df = prepare_data(val_df)
+# test_df = prepare_data(test_df)
 
-# Mean Girls example, after clean-up:
-print("Cleaned sample document: ", train_df.iloc[33614].document)
-print("Cleaned sample summary: ", train_df.iloc[33614].summary)
-print("Summary word count: ", train_df.iloc[33614].summary_word_count)
-print("Document word count: ", train_df.iloc[33614].document_word_count)
+# plt.hist(train_df['document_word_count'])
+# plt.show()
 
-print("Average Summary word count: ", train_df.summary_word_count.mean())
-print("Average Document word count: ", train_df.document_word_count.mean())
+print("len of train dataframe", len(train_df))
 
-print("Max Summary word count: ", train_df.summary_word_count.max())
-print("Max Document word count: ", train_df.document_word_count.max())
+# # Mean Girls example, after clean-up:
+# print("Cleaned sample document: ", train_df.iloc[33614].document)
+# print("Cleaned sample summary: ", train_df.iloc[33614].summary)
+# print("Summary word count: ", train_df.iloc[33614].summary_word_count)
+# print("Document word count: ", train_df.iloc[33614].document_word_count)
+#
+# print("Average Summary word count: ", train_df.summary_word_count.mean())
+# print("Average Document word count: ", train_df.document_word_count.mean())
+#
+# print("Max Summary word count: ", train_df.summary_word_count.max())
+# print("Max Document word count: ", train_df.document_word_count.max())
 
 # Following this guide closely: http://seekinginference.com/applied_nlp/T5.html
 
@@ -87,8 +105,8 @@ print("Max Document word count: ", train_df.document_word_count.max())
 #plt.show()
 
 
-print("entries with document length > 1000", train_df[train_df.document_word_count>=1000].shape[0])
-
+# print("entries with document length > 1000", train_df[train_df.document_word_count>=1000].shape[0])
+#
 
 
 
@@ -136,19 +154,19 @@ def tokenize(df, tokenizer, max_len):
     return torch.cat(input_ids, dim=0), torch.cat(attention_masks, dim=0)
 
 
-# Get max length for tokenized documents:
-
+# # Get max length for tokenized documents:
+#
 # token_len = []
 # for i in tqdm(range(train_df.shape[0])):
-#     token_len.append(len(tokenizer.tokenize(train_df.iloc[i]['document'])))
+#      token_len.append(len(tokenizer.tokenize(train_df.iloc[i]['document'])))
 #
 # doc_df = pd.DataFrame({"len_tokens": token_len})
 # doc_max_len = doc_df['len_tokens'].max()
 #
 # print("max length of tokenized documents: ", doc_max_len)
-# max is --1868
-
-# Get max length for tokenized summaries:
+# # max is --1868
+#
+# # Get max length for tokenized summaries:
 # token_len = []
 # for i in tqdm(range(train_df.shape[0])):
 #     token_len.append(len(tokenizer.tokenize(train_df.iloc[i]['summary'])))
@@ -157,21 +175,27 @@ def tokenize(df, tokenizer, max_len):
 # summary_max_len = summary_df['len_tokens'].max()
 #
 # print("max length of tokenized summaries: ", summary_max_len)
-# max is 955
-
-# doc_input_ids, doc_attention_masks = tokenize(train_df['document'].values, tokenizer, 1868)
-# summary_input_ids, summary_attention_masks = tokenize(train_df['summary'].values, tokenizer, 955)
+# # max is 955
 #
+# doc_input_ids, doc_attention_masks = tokenize(train_df['document'].values, tokenizer, 1859)
+# summary_input_ids, summary_attention_masks = tokenize(train_df['summary'].values, tokenizer, 907)
+
 
 #
 # PREPARE TENSOR DATASETS: TRAIN, TEST, VAL:
 
 def prepare_dataset(df, tokenizer):
-    doc_input_ids, doc_attention_masks = tokenize(df['document'].values, tokenizer, 1868)
-    summary_input_ids, summary_attention_masks = tokenize(df['summary'].values, tokenizer, 955)
+
+    threshold = 1000
+    df = prepare_data(df, threshold)
+
+
+    doc_input_ids, doc_attention_masks = tokenize(df['document'].values, tokenizer, 1859)
+    summary_input_ids, summary_attention_masks = tokenize(df['summary'].values, tokenizer, 907)
 
     tensor_df = TensorDataset(doc_input_ids, doc_attention_masks, summary_input_ids, summary_attention_masks)
     return tensor_df
+
 
 train_dataset = prepare_dataset(train_df, tokenizer)
 val_dataset = prepare_dataset(val_df, tokenizer)
