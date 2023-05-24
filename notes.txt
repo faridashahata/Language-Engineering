@@ -1,0 +1,155 @@
+# EXP 0: lr = 1e-5, 5 epochs, t5 small: 16 batch_size:
+
+# Epoch | train Loss
+# 0 | 2.928162097334862
+
+# Epoch | validation Loss
+# 0 | 1.9831322878599167
+
+# Epoch | train Loss
+# 1 | 1.9147634766499202
+
+# Epoch | validation Loss
+# 1 | 1.8701450414955616
+
+# Epoch | train Loss
+# 2 | 1.8536313583453496
+#
+# Epoch | validation Loss
+# 2 | 1.8421144299209118
+
+
+# FIRST EXPERIMENT: OVERFIT: lr = 5e-4, 10 epochs, t5 small: 16 batch_size:
+
+# 10 epochs:
+# #
+# Epoch | train Loss
+# 0 | 1.7621653946240743
+
+# Epoch | validation Loss
+# 0 | 1.6970857009291649
+
+
+# # Epoch | train Loss
+# # 1 | 1.626004677216212
+
+
+# Epoch | validation Loss
+# 1 | 1.6728606931865215
+
+#
+# Epoch | train Loss
+# 2 | 1.5664739483594894
+
+
+# Epoch | validation Loss
+# 2 | 1.665628295391798
+
+# Epoch | train Loss
+# 3 | 1.5200032677253088
+
+# Epoch | validation Loss
+# 3 | 1.6614952087402344
+
+# Epoch | train Loss
+# 4 | 1.4804342768589656
+
+# Epoch | validation Loss
+# 4 | 1.665056113153696
+
+#
+# Epoch | train Loss
+# 5 | 1.4472915301720302
+
+# Epoch | validation Loss
+# 5 | 1.6688082218170166
+
+# Epoch | train Loss
+# 6 | 1.4198416829109193
+
+#
+# Epoch | validation Loss
+# 6 | 1.6688379794359207
+
+# Epoch | train Loss
+# 7 | 1.397624674042066
+#
+# Epoch | validation Loss
+# 7 | 1.6684650368988514
+#
+
+# Epoch | train Loss
+# 8 | 1.3807224975029628
+#
+# Epoch | validation Loss
+# 8 | 1.6724535338580608
+
+# Epoch | train Loss
+# 9 | 1.3687105401357016
+#
+# Epoch | validation Loss
+# 9 | 1.6760194823145866
+
+# ROUGE SCORES: first run:
+# {'rouge1_fmeasure': tensor(0.2521),
+#  'rouge1_precision': tensor(0.2698),
+#  'rouge1_recall': tensor(0.2438),
+#  'rouge2_fmeasure': tensor(0.0282),
+#  'rouge2_precision': tensor(0.0304),
+#  'rouge2_recall': tensor(0.0271),
+#  'rougeL_fmeasure': tensor(0.1347),
+#  'rougeL_precision': tensor(0.1446),
+#  'rougeL_recall': tensor(0.1299),
+#  'rougeLsum_fmeasure': tensor(0.1948),
+#  'rougeLsum_precision': tensor(0.2091),
+#  'rougeLsum_recall': tensor(0.1879)}
+
+
+# SECOND EXPERIMENT: 5 epochs,  lr = 3e-5, t5 small, 64 batch_size: (issue: dataloader out of train loop had batck size 16 instead of 64)
+#
+# Epoch | train Loss
+# 0 | 2.940731824239095
+#
+#
+# Epoch | validation Loss
+# 0 | 1.8101017475128174
+
+# Epoch | train Loss
+# 1 | 1.7195128846168517
+#
+# Epoch | validation Loss
+# 1 | 1.673126995563507
+
+
+# Epoch | train Loss
+# 2 | 1.6483326522509256
+#
+# Epoch | validation Loss
+# 2 | 1.6299879252910614
+
+# Epoch | train Loss
+# 3 | 1.6174597962697348
+#
+# Epoch | validation Loss
+# 3 | 1.6070178896188736
+
+# Epoch | train Loss
+# 4 | 1.5962289261817932
+#
+#
+# Epoch | validation Loss
+# 4 | 1.5885822623968124
+
+# [{'Test Loss': 1.3741268600736345}]
+# {'rouge1_fmeasure': tensor(0.2785),
+#  'rouge1_precision': tensor(0.3328),
+#  'rouge1_recall': tensor(0.2473),
+#  'rouge2_fmeasure': tensor(0.0424),
+#  'rouge2_precision': tensor(0.0508),
+#  'rouge2_recall': tensor(0.0376),
+#  'rougeL_fmeasure': tensor(0.1629),
+#  'rougeL_precision': tensor(0.1953),
+#  'rougeL_recall': tensor(0.1444),
+#  'rougeLsum_fmeasure': tensor(0.2319),
+#  'rougeLsum_precision': tensor(0.2777),
+#  'rougeLsum_recall': tensor(0.2055)}
