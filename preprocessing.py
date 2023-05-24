@@ -29,12 +29,10 @@ print("The shape of the training dataframe: ", train_df.shape)
      Add "</s>" to end of summary and document  """
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 global MODEL_NAME
-MODEL_NAME = 't5-large'
+MODEL_NAME = 't5-small'
 global BATCH_SIZE
 BATCH_SIZE = 64
 
-global THRESHOLD
-THRESHOLD = 200
 
 
 def prepare_data(df, threshold, tokenizer):
@@ -213,10 +211,12 @@ print("max length of tokenized summaries: ", summary_max_len)
 def prepare_dataset(df, tokenizer, threshold):
 
     #threshold = 1000
-    df = prepare_data(df, threshold)
+    df = prepare_data(df, threshold, tokenizer)
 
-    DOC_MAX_LEN = 1.5 * THRESHOLD
-    SUMMARY_MAX_LEN = THRESHOLD
+    DOC_MAX_LEN = int(1.5 * threshold)
+    SUMMARY_MAX_LEN = threshold
+    print("DOC_MAX_LEN", DOC_MAX_LEN)
+    print("SUMMARY_MAX_LEN", SUMMARY_MAX_LEN)
     doc_input_ids, doc_attention_masks = tokenize(df['document'].values, tokenizer, DOC_MAX_LEN)
     summary_input_ids, summary_attention_masks = tokenize(df['summary'].values, tokenizer, SUMMARY_MAX_LEN)
 

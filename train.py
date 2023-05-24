@@ -8,7 +8,7 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration, AdamW
 from transformers import get_linear_schedule_with_warmup
 
 import preprocessing
-from preprocessing import prepare_dataset, MODEL_NAME, THRESHOLD, BATCH_SIZE
+from preprocessing import prepare_dataset, MODEL_NAME, BATCH_SIZE
 
 # STEP 0: GET THE DATA:
 
@@ -23,6 +23,9 @@ val_df = pd.read_json("./data/validation.jsonl", lines=True)
 
 device = torch.device("mps")
 EPOCHS = 5
+global THRESHOLD
+THRESHOLD = 200
+
 tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
 
 #Tensor datasets:
