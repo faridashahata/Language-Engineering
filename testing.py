@@ -95,11 +95,11 @@ def test(model, dataloader):
         preds = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in generated_ids]
 
         target = [tokenizer.decode(t, skip_special_tokens=True, clean_up_tokenization_spaces=True) for t in summary_input_ids]
-        # print("preds", preds)
-        # print("\n")
-        # print("target", target)
-        # print("\n")
-        # print("\n")
+        print("preds:    ", preds)
+        print("\n")
+        print("target:   ", target)
+        print("\n")
+        print("\n")
         predictions.extend(preds)
         actual_summaries.extend(target)
 

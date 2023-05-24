@@ -28,6 +28,14 @@ print("The shape of the training dataframe: ", train_df.shape)
      Add "summarize: " before documents to summarize
      Add "</s>" to end of summary and document  """
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+global MODEL_NAME
+MODEL_NAME = 't5-large'
+global BATCH_SIZE
+BATCH_SIZE = 64
+
+global THRESHOLD
+THRESHOLD = 200
+
 
 def prepare_data(df, threshold, tokenizer):
 
@@ -81,8 +89,9 @@ def prepare_data(df, threshold, tokenizer):
     new_df = new_df[new_df.summary_word_count > 0]
     
     return new_df
+# MODEL_NAME = 't5-small'
 
-tokenizer = T5Tokenizer.from_pretrained('t5-small')
+tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
 train_df = prepare_data(train_df, 200, tokenizer)
 val_df = prepare_data(val_df, 200, tokenizer)
 test_df = prepare_data(test_df, 200, tokenizer)
@@ -206,14 +215,15 @@ def prepare_dataset(df, tokenizer, threshold):
     #threshold = 1000
     df = prepare_data(df, threshold)
 
-
-    doc_input_ids, doc_attention_masks = tokenize(df['document'].values, tokenizer, 300)
-    summary_input_ids, summary_attention_masks = tokenize(df['summary'].values, tokenizer, 226)
+    DOC_MAX_LEN = 1.5 * THRESHOLD
+    SUMMARY_MAX_LEN = THRESHOLD
+    doc_input_ids, doc_attention_masks = tokenize(df['document'].values, tokenizer, DOC_MAX_LEN)
+    summary_input_ids, summary_attention_masks = tokenize(df['summary'].values, tokenizer, SUMMARY_MAX_LEN)
 
     tensor_df = TensorDataset(doc_input_ids, doc_attention_masks, summary_input_ids, summary_attention_masks)
     return tensor_df
 
-
-# train_dataset = prepare_dataset(train_df, tokenizer, threshold)
-# val_dataset = prepare_dataset(val_df, tokenizer, threshold)
-# test_dataset = prepare_dataset(test_df, tokenizer, threshold)
+#
+# train_dataset = prepare_dataset(train_df, tokenizer, THRESHOLD)
+# val_dataset = prepare_dataset(val_df, tokenizer, THRESHOLD)
+# test_dataset = prepare_dataset(test_df, tokenizer, THRESHOLD)
