@@ -29,7 +29,7 @@ print("The shape of the training dataframe: ", train_df.shape)
      Add "</s>" to end of summary and document  """
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-def prepare_data(df, threshold):
+def prepare_data(df, threshold, tokenizer):
 
     # Lowercase the data:
     df['document'] = df['document'].apply(lambda x: x.lower())
@@ -52,6 +52,9 @@ def prepare_data(df, threshold):
     df['document_word_count'] = df['document'].apply(lambda x: len(x.split()))
     df['summary_word_count'] = df['summary'].apply(lambda x: len(x.split()))
 
+
+    #df['summary_token_count'] = df['summary'].apply(lambda x: len(tokenizer.tokenize(x)))
+
     # Add "summarize" before document:
     df['document'] = 'summarize: ' + df['document']
 
@@ -63,21 +66,26 @@ def prepare_data(df, threshold):
     # df['summary'] = df['summary'] + " </s>"
 
 
-
-
-
     # Truncate data:
-    df = df[df.document_word_count <= threshold]
+    new_df = df[df.document_word_count <= threshold].copy()
+
+    # Generate token counts:
+    new_df['doc_token_count'] = new_df['document'].apply(lambda x: len(tokenizer.tokenize(x)))
+
+    #Truncate based on tokens:
+    new_df = new_df[new_df.doc_token_count <= 1.5*threshold]
+
 
     # Remove rows with no summary or document:
-    df = df[df.document_word_count > 0]
-    df = df[df.summary_word_count > 0]
+    new_df = new_df[new_df.document_word_count > 0]
+    new_df = new_df[new_df.summary_word_count > 0]
     
-    return df
+    return new_df
 
-# train_df = prepare_data(train_df)
-# val_df = prepare_data(val_df)
-# test_df = prepare_data(test_df)
+tokenizer = T5Tokenizer.from_pretrained('t5-small')
+train_df = prepare_data(train_df, 200, tokenizer)
+val_df = prepare_data(val_df, 200, tokenizer)
+test_df = prepare_data(test_df, 200, tokenizer)
 
 # plt.hist(train_df['document_word_count'])
 # plt.show()
@@ -93,8 +101,13 @@ print("len of train dataframe", len(train_df))
 # print("Average Summary word count: ", train_df.summary_word_count.mean())
 # print("Average Document word count: ", train_df.document_word_count.mean())
 #
-# print("Max Summary word count: ", train_df.summary_word_count.max())
-# print("Max Document word count: ", train_df.document_word_count.max())
+print("Max Summary word count: ", train_df.summary_word_count.max())
+
+# print("document with max doc word count: ", train_df[train_df.document_word_count == train_df.document_word_count.max()].iloc[0].document)
+# print("summary with max doc word count: ", train_df[train_df.document_word_count == train_df.document_word_count.max()].iloc[0].summary)
+
+
+print("Max Document word count: ", train_df.document_word_count.max())
 
 # Following this guide closely: http://seekinginference.com/applied_nlp/T5.html
 
@@ -114,11 +127,11 @@ print("len of train dataframe", len(train_df))
 # STEP 2: INSTANTIATE T5 TOKENZIER and TOKENIZE THE DATA:
 
 
-tokenizer = T5Tokenizer.from_pretrained('t5-small')
-
-print("eos token id: ", tokenizer.eos_token_id)
-print("unk token id: ", tokenizer.unk_token_id)
-print("pad token id: ", tokenizer.pad_token_id)
+# tokenizer = T5Tokenizer.from_pretrained('t5-small')
+#
+# print("eos token id: ", tokenizer.eos_token_id)
+# print("unk token id: ", tokenizer.unk_token_id)
+# print("pad token id: ", tokenizer.pad_token_id)
 
 """ 
 The output of tokenizer is a dictionary containing two keys – input ids and attention mask. 
@@ -156,25 +169,29 @@ def tokenize(df, tokenizer, max_len):
 
 # # Get max length for tokenized documents:
 #
-# token_len = []
-# for i in tqdm(range(train_df.shape[0])):
-#      token_len.append(len(tokenizer.tokenize(train_df.iloc[i]['document'])))
-#
-# doc_df = pd.DataFrame({"len_tokens": token_len})
-# doc_max_len = doc_df['len_tokens'].max()
-#
-# print("max length of tokenized documents: ", doc_max_len)
-# # max is --1868
-#
-# # Get max length for tokenized summaries:
-# token_len = []
-# for i in tqdm(range(train_df.shape[0])):
-#     token_len.append(len(tokenizer.tokenize(train_df.iloc[i]['summary'])))
-#
-# summary_df = pd.DataFrame({"len_tokens": token_len})
-# summary_max_len = summary_df['len_tokens'].max()
-#
-# print("max length of tokenized summaries: ", summary_max_len)
+token_len = []
+for i in tqdm(range(train_df.shape[0])):
+    if len(tokenizer.tokenize(train_df.iloc[i]['document'])) > 400:
+        print("LARGE TOKENIZED DOC: ", train_df.iloc[i]['document'])
+        print("LARGE DOC AFTER TOKENIZING: ", tokenizer.tokenize(train_df.iloc[i]['document']))
+
+    token_len.append(len(tokenizer.tokenize(train_df.iloc[i]['document'])))
+
+doc_df = pd.DataFrame({"len_tokens": token_len})
+doc_max_len = doc_df['len_tokens'].max()
+
+print("max length of tokenized documents: ", doc_max_len)
+# max is --1868
+
+# Get max length for tokenized summaries:
+token_len = []
+for i in tqdm(range(train_df.shape[0])):
+    token_len.append(len(tokenizer.tokenize(train_df.iloc[i]['summary'])))
+
+summary_df = pd.DataFrame({"len_tokens": token_len})
+summary_max_len = summary_df['len_tokens'].max()
+
+print("max length of tokenized summaries: ", summary_max_len)
 # # max is 955
 #
 # doc_input_ids, doc_attention_masks = tokenize(train_df['document'].values, tokenizer, 1859)
@@ -184,19 +201,19 @@ def tokenize(df, tokenizer, max_len):
 #
 # PREPARE TENSOR DATASETS: TRAIN, TEST, VAL:
 
-def prepare_dataset(df, tokenizer):
+def prepare_dataset(df, tokenizer, threshold):
 
-    threshold = 1000
+    #threshold = 1000
     df = prepare_data(df, threshold)
 
 
-    doc_input_ids, doc_attention_masks = tokenize(df['document'].values, tokenizer, 1859)
-    summary_input_ids, summary_attention_masks = tokenize(df['summary'].values, tokenizer, 907)
+    doc_input_ids, doc_attention_masks = tokenize(df['document'].values, tokenizer, 300)
+    summary_input_ids, summary_attention_masks = tokenize(df['summary'].values, tokenizer, 226)
 
     tensor_df = TensorDataset(doc_input_ids, doc_attention_masks, summary_input_ids, summary_attention_masks)
     return tensor_df
 
 
-train_dataset = prepare_dataset(train_df, tokenizer)
-val_dataset = prepare_dataset(val_df, tokenizer)
-test_dataset = prepare_dataset(test_df, tokenizer)
+# train_dataset = prepare_dataset(train_df, tokenizer, threshold)
+# val_dataset = prepare_dataset(val_df, tokenizer, threshold)
+# test_dataset = prepare_dataset(test_df, tokenizer, threshold)
