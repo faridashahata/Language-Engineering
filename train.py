@@ -2,6 +2,7 @@ import pandas as pd
 import torch
 import tqdm
 import time
+import numpy as np
 from torch.utils.data import (DataLoader)
 # from pytorch_transformers import AdamW, WarmupLinearSchedule, T5Tokenizer
 from transformers import T5Tokenizer, T5ForConditionalGeneration, AdamW
@@ -56,6 +57,28 @@ scheduler = get_linear_schedule_with_warmup(optimizer,
                                             num_warmup_steps=0,
                                             num_training_steps=total_steps
                                             )
+
+# IMPLEMENT EARLY STOPPING:
+
+class EarlyStopper:
+
+    def __init__(self, patience=1, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.min_validation_loss = np.inf
+
+    def early_stop(self, validation_loss):
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
+            self.counter = 0
+        elif validation_loss > (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        return False
+
+early_stopper = EarlyStopper(patience=3, min_delta=10)
 
 def train(model, batch_size, optimizer, epochs, scheduler):
 
@@ -151,6 +174,10 @@ def train(model, batch_size, optimizer, epochs, scheduler):
 
         avg_val_loss = total_val_loss / len(val_dataloader)
         val_stats.append({'Validation Loss': avg_val_loss})
+
+        # Add Early Stopping:
+        if early_stopper.early_stop(avg_val_loss):
+            break
 
         print("Summary Results: ")
         print("Epoch | validation Loss")
