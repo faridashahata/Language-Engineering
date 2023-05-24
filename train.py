@@ -58,10 +58,15 @@ class EarlyStopper:
 
 early_stopper = EarlyStopper(patience=3, min_delta=10)
 
-def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval):
+def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, resume_from_checkpoint=None):
     train_stats = []
     val_stats = []
-    for epoch in range(epochs):
+    if resume_from_checkpoint:
+        load_checkpoint(model, optimizer, tokenizer, resume_from_checkpoint)
+        start_epoch = int(resume_from_checkpoint.split('_')[-1])
+    else:
+        start_epoch = 0
+    for epoch in range(start_epoch, epochs):
 
         # Set total loss to zero for each epoch:
         total_loss = 0
@@ -186,6 +191,20 @@ def save_checkpoint(model, optimizer, tokenizer, epoch, val_loss):
         f.write(f'Epoch: {epoch}\n')
         f.write(f'Validation Loss: {val_loss}\n')
 
+def load_checkpoint(model, optimizer, tokenizer, checkpoint_dir):
+    # Load model state dict
+    model.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'model.pt')))
+    # model.to('mds')
+    # Load optimizer state dict
+    optimizer.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'optimizer.pt')))
+    # Load tokenizer
+    tokenizer.from_pretrained(checkpoint_dir)
+
 # Set batch size in the global var in preprocessing:
-train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler)
+train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler,  checkpoint_interval=1)
+
+# Set the path to the checkpoint directory EXAMPLE
+# checkpoint_dir = './checkpoints/epoch_3'
+# Call the train function with the checkpoint
+#train_stats, val_stats = train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler, checkpoint_interval=1, resume_from_checkpoint=checkpoint_dir)
 
