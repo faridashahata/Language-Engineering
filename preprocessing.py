@@ -160,7 +160,7 @@ def tokenize(df, tokenizer, max_len):
                         add_special_tokens=True,
                         max_length=max_len,
                         truncation=True,
-                        padding='longest',
+                        padding='max_length',
                         return_attention_mask=True,
                         return_tensors='pt'
                         )
