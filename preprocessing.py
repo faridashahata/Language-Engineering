@@ -9,8 +9,7 @@ from tqdm import tqdm
 # from pytorch_transformers import AdamW, WarmupLinearSchedule, T5Tokenizer
 from transformers import T5Tokenizer
 
-os.getcwd()
-os.chdir("/Users/faridashahata/Desktop/Language Engineering/Project")
+
 train_df = pd.read_json("./data/train.jsonl", lines=True)
 test_df = pd.read_json("./data/test.jsonl", lines=True)
 val_df = pd.read_json("./data/validation.jsonl", lines=True)
@@ -161,7 +160,7 @@ def tokenize(df, tokenizer, max_len):
                         add_special_tokens=True,
                         max_length=max_len,
                         truncation=True,
-                        pad_to_max_length=True,
+                        padding='longest',
                         return_attention_mask=True,
                         return_tensors='pt'
                         )

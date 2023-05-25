@@ -23,7 +23,7 @@ val_df = pd.read_json("./data/validation.jsonl", lines=True)
 
 device = torch.device("mps")
 
-tokenizer = T5Tokenizer.from_pretrained('t5-small')
+tokenizer = T5Tokenizer.from_pretrained('t5-large')
 
 #Tensor datasets:
 train_dataset = prepare_dataset(train_df, tokenizer, 200)
@@ -41,7 +41,7 @@ dataloader = DataLoader(dataset=test_dataset,
                                 batch_size=64)
 
 
-tokenizer = T5Tokenizer.from_pretrained('t5-small')
+tokenizer = T5Tokenizer.from_pretrained('t5-large')
 
 test_stats = []
 # Testing loop:
@@ -119,7 +119,7 @@ def test(model, dataloader):
 
 
 # LOAD MODEL:
-model = T5ForConditionalGeneration.from_pretrained('t5-small')
+model = T5ForConditionalGeneration.from_pretrained('t5-large')
 model.load_state_dict(torch.load('t5_model_v2.pt'))
 
 test_stats = test(model, dataloader)

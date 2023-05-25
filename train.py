@@ -3,11 +3,11 @@ import time
 import numpy as np
 import pandas as pd
 import torch
-import shutil
-
+import sentencepiece
+from torch.optim import AdamW
 
 from torch.utils.data import (DataLoader)
-from transformers import T5Tokenizer, T5ForConditionalGeneration, AdamW
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 from transformers import get_linear_schedule_with_warmup
 from preprocessing import prepare_dataset, MODEL_NAME, BATCH_SIZE
 
@@ -67,7 +67,7 @@ def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, 
     else:
         start_epoch = 0
     for epoch in range(start_epoch, epochs):
-
+        print(f"Epoch {epoch + 1} of {epochs}")
         # Set total loss to zero for each epoch:
         total_loss = 0
 
