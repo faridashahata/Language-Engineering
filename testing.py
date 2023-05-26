@@ -10,20 +10,14 @@ import preprocessing
 import nlp
 from preprocessing import prepare_dataset
 
-# STEP 0: GET THE DATA:
-
 train_df = pd.read_json("./data/train.jsonl", lines=True)
 test_df = pd.read_json("./data/test.jsonl", lines=True)
 val_df = pd.read_json("./data/validation.jsonl", lines=True)
 
-# train_df = preprocessing.prepare_data(train_df)
-# val_df = preprocessing.prepare_data(val_df)
-# test_df = preprocessing.prepare_data(test_df)
-
 
 device = torch.device("mps")
 
-tokenizer = T5Tokenizer.from_pretrained('t5-large')
+tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
 
 #Tensor datasets:
 train_dataset = prepare_dataset(train_df, tokenizer, 200)
@@ -39,9 +33,6 @@ print("Test data size: ", len(test_dataset))
 dataloader = DataLoader(dataset=test_dataset,
                                 shuffle=False,
                                 batch_size=64)
-
-
-tokenizer = T5Tokenizer.from_pretrained('t5-large')
 
 test_stats = []
 # Testing loop:
@@ -95,11 +86,6 @@ def test(model, dataloader):
         preds = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in generated_ids]
 
         target = [tokenizer.decode(t, skip_special_tokens=True, clean_up_tokenization_spaces=True) for t in summary_input_ids]
-        print("preds:    ", preds)
-        print("\n")
-        print("target:   ", target)
-        print("\n")
-        print("\n")
         predictions.extend(preds)
         actual_summaries.extend(target)
 
@@ -119,7 +105,7 @@ def test(model, dataloader):
 
 
 # LOAD MODEL:
-model = T5ForConditionalGeneration.from_pretrained('t5-large')
+model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 model.load_state_dict(torch.load('t5_model_v2.pt'))
 
 test_stats = test(model, dataloader)
