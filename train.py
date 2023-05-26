@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import numpy as np
@@ -17,8 +18,8 @@ test_df = pd.read_json("./data/test.jsonl", lines=True)
 val_df = pd.read_json("./data/validation.jsonl", lines=True)
 
 # Set global variables:
-EPOCHS = 5
-THRESHOLD: int = 200
+EPOCHS = 10
+THRESHOLD: int = 500
 
 tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
 
@@ -28,6 +29,8 @@ val_dataset = prepare_dataset(val_df, tokenizer, THRESHOLD)
 test_dataset = prepare_dataset(test_df, tokenizer, THRESHOLD)
 
 print("Train data size: ", len(train_dataset))
+print("Val data size: ", len(val_dataset))
+print("Test data size: ", len(test_dataset))
 
 # STEP 1: INSTANTIATE MODEL:
 model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
@@ -58,11 +61,11 @@ class EarlyStopper:
 
 early_stopper = EarlyStopper(patience=3, min_delta=10)
 
-def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, resume_from_checkpoint=None):
+def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, resume_from_checkpoint=None, model_name_pt=None):
     train_stats = []
     val_stats = []
     if resume_from_checkpoint:
-        load_checkpoint(model, optimizer, tokenizer, resume_from_checkpoint)
+        load_checkpoint(model, optimizer, tokenizer, resume_from_checkpoint, model_name_pt)
         start_epoch = int(resume_from_checkpoint.split('_')[-1])
     else:
         start_epoch = 0
@@ -149,8 +152,6 @@ def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, 
         val_stats.append({'Validation Loss': avg_val_loss})
 
         # Add Early Stopping:
-        if early_stopper.early_stop(avg_val_loss):
-            break
 
         print("Summary Results: ")
         print("Epoch | validation Loss")
@@ -170,14 +171,16 @@ def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, 
             best_val_loss = val_stats[epoch]['Validation Loss']
             torch.save(model.state_dict(), f't5_model_{t0}.pt')
 
-            model.save_pretrained(f'./model_save/t5_{t0}/')
-            tokenizer.save_pretrained(f'./model_save/t5_{t0}/')
+            model.save_pretrained(f'./model_save_{MODEL_NAME}_{THRESHOLD}/t5_{t0}/')
+            tokenizer.save_pretrained(f'./model_save_{MODEL_NAME}_{THRESHOLD}/t5_{t0}/')
 
+        if early_stopper.early_stop(avg_val_loss):
+            break
     return train_stats, val_stats
 
 def save_checkpoint(model, optimizer, tokenizer, epoch, val_loss):
     # Create a directory to save the checkpoint
-    checkpoint_dir = f'./checkpoints/epoch_{epoch}'
+    checkpoint_dir = f'./checkpoints_{MODEL_NAME}_{THRESHOLD}/epoch_{epoch}'
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -191,9 +194,9 @@ def save_checkpoint(model, optimizer, tokenizer, epoch, val_loss):
         f.write(f'Epoch: {epoch}\n')
         f.write(f'Validation Loss: {val_loss}\n')
 
-def load_checkpoint(model, optimizer, tokenizer, checkpoint_dir):
+def load_checkpoint(model, optimizer, tokenizer, checkpoint_dir, model_name_pt):
     # Load model state dict
-    model.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'model.pt')))
+    model.load_state_dict(torch.load(os.path.join(checkpoint_dir, model_name_pt)))
     # model.to('mds')
     # Load optimizer state dict
     optimizer.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'optimizer.pt')))
@@ -201,10 +204,14 @@ def load_checkpoint(model, optimizer, tokenizer, checkpoint_dir):
     tokenizer.from_pretrained(checkpoint_dir)
 
 # Set batch size in the global var in preprocessing:
-train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler,  checkpoint_interval=1)
+train_stats, val_stats = train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler,  checkpoint_interval=1)
 
 # Set the path to the checkpoint directory EXAMPLE
 # checkpoint_dir = './checkpoints/epoch_3'
 # Call the train function with the checkpoint
 #train_stats, val_stats = train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler, checkpoint_interval=1, resume_from_checkpoint=checkpoint_dir)
-
+# Save the train and validation stats
+with open(f'checkpoints_{MODEL_NAME}_{THRESHOLD}/train_stats.json', 'w') as f:
+    json.dump(train_stats, f)
+with open(f'checkpoints_{MODEL_NAME}_{THRESHOLD}/val_stats.json', 'w') as f:
+    json.dump(val_stats, f)
