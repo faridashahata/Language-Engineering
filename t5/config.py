@@ -1,9 +1,9 @@
 # Configurations for the code
 
 # Data paths
-TRAIN_DATA_PATH = "../data/train.jsonl"
-TEST_DATA_PATH = "../data/test.jsonl"
-VAL_DATA_PATH = "../data/validation.jsonl"
+TRAIN_DATA_PATH = "../data/train_example.jsonl"
+TEST_DATA_PATH = "../data/test_example.jsonl"
+VAL_DATA_PATH = "../data/validation_example.jsonl"
 
 # Model configuration
 MODEL_NAME = 't5-base'
@@ -25,3 +25,6 @@ CHECKPOINT_DIR = "./checkpoints"
 TRAIN_STATS_PATH = "./checkpoints/train_stats.json"
 VAL_STATS_PATH = "./checkpoints/val_stats.json"
 MODEL_SAVE_DIR = f"./model_save_{MODEL_NAME}_{THRESHOLD}_{BATCH_SIZE}"
+
+#Test configuration
+MODEL_TO_TEST = "model_save_t5-base_350_4/t5_model_17:06:26.pt"

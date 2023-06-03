@@ -48,8 +48,8 @@ def test(model, dataloader):
             print(f"Batch {step} of a total {len(dataloader)}")
 
         # Unpack training batch from dataloader:
-        doc_input_ids, doc_attention_masks = batch[0], batch[1]
-        summary_input_ids, summary_attention_masks = batch[2], batch[3]
+        doc_input_ids, doc_attention_masks = batch[0].cuda(), batch[1].cuda()
+        summary_input_ids, summary_attention_masks = batch[2].cuda(), batch[3].cuda()
 
         # Forward pass:
         # with autocast():
@@ -108,8 +108,8 @@ def test(model, dataloader):
 
 
 # LOAD MODEL:
-model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
-model.load_state_dict(torch.load(MODEL_TO_TEST))
+model = T5ForConditionalGeneration.from_pretrained('t5-base').cuda()
+model.load_state_dict(torch.load('./model_save_t5-base_250_4/t5_model_16:11:52.pt'))
 
 test_stats = test(model, dataloader)
 print("test stats: ", test_stats)
