@@ -54,7 +54,7 @@ The hyperparameters for the models can be adjusted in the config.py files in the
 ### Resources
 - [Torch documentation](https://pytorch.org/docs/stable/index.html): Official documentation for the Torch framework.
 - [Hugging Face Transformers documentation](https://huggingface.co/transformers/): Documentation for the Transformers library, which provides pre-trained models and tools for natural language processing tasks.
-- [Narrasum dataset](https://arxiv.org/abs/2212.01476): The Narrasum dataset is a collection of movie plot summaries and their corresponding summaries. The dataset is used for training and evaluating the models.
+- [Narrasum dataset](https://github.com/zhaochaocs/narrasum) The Narrasum dataset is a collection of movie plot summaries and their corresponding summaries. The dataset is used for training and evaluating the models.
 - [ROUGE metrics](https://en.wikipedia.org/wiki/ROUGE_(metric)): The ROUGE metrics are used for evaluating the performance of the models for text summarization.
 - [T5 model](https://arxiv.org/abs/1910.10683): The T5 model is a Transformer-based model that can be used for text summarization.
 - [BART model](https://arxiv.org/abs/1910.13461): The BART model is a Transformer-based model that can be used for text summarization.
