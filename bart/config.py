@@ -11,3 +11,6 @@ MODEL_NAME = "facebook/bart-base"
 MODEL_DIR = "./model_save_bart"
 MODEL_FILE_NAME = "model_bart.pt"
 OPTIMIZER_FILE_NAME = "optimizer.pt"
+
+#Test configuration
+MODEL_TO_TEST = "model_save_bart/model_bart.pt"
