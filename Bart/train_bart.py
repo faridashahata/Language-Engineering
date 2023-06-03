@@ -120,7 +120,7 @@ for epoch in range(num_epochs):
     scheduler.step()
 
 # Save the fine-tuned model
-output_dir = "."
+output_dir = ".."
 model_dir = f'./model_save_bart'
 if not os.path.exists(model_dir):
     os.makedirs(model_dir)

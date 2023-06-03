@@ -13,7 +13,7 @@ import time
 from torch.utils.data import (DataLoader)
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 from transformers import get_linear_schedule_with_warmup
-from preprocessing import prepare_dataset
+from T5.preprocessing import prepare_dataset
 
 # STEP 0: GET THE DATA:
 train_df = pd.read_json("./data/train.jsonl", lines=True)

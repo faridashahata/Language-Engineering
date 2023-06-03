@@ -1,14 +1,10 @@
 import pandas as pd
 import torch
-import nltk
-import jsonlines
 from torch.utils.data import (DataLoader)
 # from transformers import BartTokenizer, BartForConditionalGeneration
-from transformers import T5Tokenizer, T5ForConditionalGeneration, AdamW
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 # from training_barttt import MyDataset
-import preprocessing
-import nlp
-from preprocessing import prepare_dataset
+from T5.preprocessing import prepare_dataset
 
 train_df = pd.read_json("./data/train.jsonl", lines=True)
 test_df = pd.read_json("./data/test.jsonl", lines=True)
@@ -125,7 +121,6 @@ test_df.to_csv('test_df_t5-base_LAST.csv')
 # ROUGE METRICS:
 
 print("rouge metrics loaded")
-import torchmetrics
 from torchmetrics.text.rouge import ROUGEScore
 
 preds = test_df.predicted.to_list()
