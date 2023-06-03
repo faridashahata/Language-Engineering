@@ -5,12 +5,13 @@ import torch
 import os
 import jsonlines
 from torch.optim import lr_scheduler, AdamW
+from config import *
 
 
 # Hyperparameters
-batch_size = 2
-learning_rate = 3e-5
-num_epochs = 3
+batch_size = BATCH_SIZE
+learning_rate = LEARNING_RATE
+num_epochs = EPOCHS
 
 # Define dataset and dataloader
 class BartDataset(torch.utils.data.Dataset):
@@ -23,7 +24,7 @@ class BartDataset(torch.utils.data.Dataset):
             for item in reader:
                 if len(item["document"]) == 0 or len(item["summary"]) == 0:
                     continue
-                if len(item["document"].split()) > 300 or len(item["summary"].split()) > 200:
+                if len(item["document"].split()) > (THRESHOLD * 1.5) or len(item["summary"].split()) > THRESHOLD:
                     continue
 
                 # Preprocess your data here
@@ -49,11 +50,11 @@ class BartDataset(torch.utils.data.Dataset):
         return len(self.data)
 
 # Load tokenizer
-tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
+tokenizer = BartTokenizer.from_pretrained(MODEL_NAME)
 
-train_data_path = "./data/train.jsonl"
-val_data_path = "./data/validation.jsonl"
-test_data_path = "./data/test.jsonl"
+train_data_path = TRAIN_DATA_PATH
+test_data_path = TEST_DATA_PATH
+val_data_path = VAL_DATA_PATH
 
 print("Preprocessing data...", train_data_path)
 train_dataset = BartDataset(train_data_path)
@@ -69,7 +70,7 @@ train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=b
 val_dataloader = DataLoader(val_dataset, sampler=val_sampler, batch_size=batch_size)
 
 # Load pre-trained BART model
-model = BartForConditionalGeneration.from_pretrained('facebook/bart-base')
+model = BartForConditionalGeneration.from_pretrained(MODEL_NAME)
 model.config.pad_token_id = tokenizer.pad_token_id
 
 model
@@ -121,11 +122,11 @@ for epoch in range(num_epochs):
 
 # Save the fine-tuned model
 output_dir = ".."
-model_dir = f'./model_save_bart'
+model_dir = MODEL_DIR
 if not os.path.exists(model_dir):
     os.makedirs(model_dir)
-torch.save(model.state_dict(), os.path.join(model_dir, 'bart_model.pt'))
-torch.save(optimizer.state_dict(), os.path.join(model_dir, 'optimizer.pt'))
+torch.save(model.state_dict(), os.path.join(model_dir, MODEL_FILE_NAME))
+torch.save(optimizer.state_dict(), os.path.join(model_dir, OPTIMIZER_FILE_NAME))
 model.save_pretrained(model_dir)
 tokenizer.save_pretrained(model_dir)
 

@@ -10,20 +10,13 @@ import time
 from torch.utils.data import (DataLoader)
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 from transformers import get_linear_schedule_with_warmup
-from T5.preprocessing import prepare_dataset
+from t5.preprocessing import prepare_dataset
+from config import *
 
 # STEP 0: GET THE DATA:
-train_df = pd.read_json("./data/train.jsonl", lines=True)
-test_df = pd.read_json("./data/test.jsonl", lines=True)
-val_df = pd.read_json("./data/validation.jsonl", lines=True)
-
-# Set global variables:
-EPOCHS = 15
-THRESHOLD: int = 350
-
-global MODEL_NAME
-MODEL_NAME = 't5-base'
-BATCH_SIZE = 4
+train_df = pd.read_json(TRAIN_DATA_PATH, lines=True)
+test_df = pd.read_json(TEST_DATA_PATH, lines=True)
+val_df = pd.read_json(VAL_DATA_PATH, lines=True)
 
 tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME,  model_max_length=512, truncation=True, padding=True)
 

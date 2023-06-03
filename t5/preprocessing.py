@@ -3,12 +3,13 @@ import pandas as pd
 import torch
 from torch.utils.data import (TensorDataset)
 from transformers import T5Tokenizer
+from config import *
 
 device = torch.device("cuda")
 
-train_df = pd.read_json("./data/train.jsonl", lines=True)
-test_df = pd.read_json("./data/test.jsonl", lines=True)
-val_df = pd.read_json("./data/validation.jsonl", lines=True)
+train_df = pd.read_json(TRAIN_DATA_PATH, lines=True)
+test_df = pd.read_json(TEST_DATA_PATH, lines=True)
+val_df = pd.read_json(VAL_DATA_PATH, lines=True)
 
 # Mean Girls example:
 # print("Sample document: ", train_df.iloc[33614].document)

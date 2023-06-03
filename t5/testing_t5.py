@@ -4,11 +4,12 @@ from torch.utils.data import (DataLoader)
 # from transformers import BartTokenizer, BartForConditionalGeneration
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 # from training_barttt import MyDataset
-from T5.preprocessing import prepare_dataset
+from t5.preprocessing import prepare_dataset
+from config import *
 
-train_df = pd.read_json("./data/train.jsonl", lines=True)
-test_df = pd.read_json("./data/test.jsonl", lines=True)
-val_df = pd.read_json("./data/validation.jsonl", lines=True)
+train_df = pd.read_json(TRAIN_DATA_PATH, lines=True)
+test_df = pd.read_json(TEST_DATA_PATH, lines=True)
+val_df = pd.read_json(VAL_DATA_PATH, lines=True)
 
 tokenizer = T5Tokenizer.from_pretrained('t5-base')
 

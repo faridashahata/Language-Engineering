@@ -12,22 +12,17 @@ torch.cuda.amp.autocast(enabled=True)
 from torch.utils.data import (DataLoader)
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 from transformers import get_linear_schedule_with_warmup
-from T5.preprocessing import prepare_dataset
+from t5.preprocessing import prepare_dataset
+from config import *
 
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device("cuda")
 scaler = GradScaler()
 
 # STEP 0: GET THE DATA:
-train_df = pd.read_json("./data/train.jsonl", lines=True)
-test_df = pd.read_json("./data/test.jsonl", lines=True)
+train_df = pd.read_json(TRAIN_DATA_PATH, lines=True)
+test_df = pd.read_json(TEST_DATA_PATH, lines=True)
 val_df = pd.read_json("./data/validation.jsonl", lines=True)
-
-# Set global variables:
-EPOCHS = 15
-THRESHOLD: int = 350
-MODEL_NAME = 't5-base'
-BATCH_SIZE = 4
 
 tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME).to(device)
 
@@ -57,7 +52,7 @@ print("Test data size: ", len(test_dataset))
 
 # STEP 1: INSTANTIATE MODEL:
 model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME).cuda()
-optimizer = AdamW(model.parameters(), lr=1e-5)  # lr = 5e-4, 3e-4
+optimizer = AdamW(model.parameters(), LEARNING_RATE)  # lr = 5e-4, 3e-4
 
 dataloader = DataLoader(dataset=train_dataset, shuffle=True, batch_size=BATCH_SIZE)
 
@@ -244,7 +239,7 @@ def load_checkpoint(model, optimizer, tokenizer, checkpoint_dir, model_name_pt):
 train_stats, val_stats = train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler, checkpoint_interval=2)
 
 # Set the path to the checkpoint directory EXAMPLE
-checkpoint_dir = './checkpoints_t5-base_250_4/epoch_6'
+# checkpoint_dir = './checkpoints_t5-base_250_4/epoch_6'
 
 # Call the train function with the checkpoint
 # train_stats, val_stats = train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler, checkpoint_interval=1, resume_from_checkpoint=checkpoint_dir, model_name_pt='t5_model_16:11:52.pt')

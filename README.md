@@ -12,6 +12,45 @@ The project focuses on training and evaluating Transformer-based models for movi
 
 3. Evaluation: During the evaluation phase, we will assess the performance of the trained models for text summarization using the ROUGE (Recall-Oriented Understudy for Gisting Evaluation) metrics, which are commonly used for evaluating summarization tasks.
 
+## Getting Started
+To train and evaluate the models, you will need to install the required dependencies
+
+Run the following command to install the dependencies:
+``` bash
+pip install -r requirements.txt
+```
+
+### Training the Models
+Run this to prepare the data and start the training process for the T5 model:
+
+``` bash
+python t5/train_t5.py
+```
+
+And this to prepare the data and start the training process for the BART model:
+
+``` bash
+python bart/train_bart.py
+```
+
+### Evaluating the Models
+Run this to evaluate the T5 model:
+
+``` bash
+python t5/testing_t5.py
+```
+
+And this to evaluate the BART model:
+
+``` bash
+python bart/testing_bart.py
+```
+
+### Adjust hyperparameters
+The hyperparameters for the models can be adjusted in the config.py files in the t5 and bart folders.
+
+
+
 ### Resources
 - [Torch documentation](https://pytorch.org/docs/stable/index.html): Official documentation for the Torch framework.
 - [Hugging Face Transformers documentation](https://huggingface.co/transformers/): Documentation for the Transformers library, which provides pre-trained models and tools for natural language processing tasks.

@@ -4,12 +4,13 @@ from torch.utils.data import DataLoader, RandomSampler
 import torch
 import os
 import jsonlines
+from config import *
 
 
 # Hyperparameters
-batch_size = 2
-learning_rate = 3e-5
-num_epochs = 3
+batch_size = BATCH_SIZE
+learning_rate = LEARNING_RATE
+num_epochs = EPOCHS
 
 # Define dataset and dataloader
 class BartDataset(torch.utils.data.Dataset):
@@ -22,7 +23,7 @@ class BartDataset(torch.utils.data.Dataset):
             for item in reader:
                 if len(item["document"]) == 0 or len(item["summary"]) == 0:
                     continue
-                if len(item["document"].split()) > 300 or len(item["summary"].split()) > 200:
+                if len(item["document"].split()) > (THRESHOLD * 1.5) or len(item["summary"].split()) > THRESHOLD:
                     continue
 
                 # Preprocess your data here
@@ -50,9 +51,9 @@ class BartDataset(torch.utils.data.Dataset):
 # Load tokenizer
 tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
 
-train_data_path = "./data/train.jsonl"
-val_data_path = "./data/validation.jsonl"
-test_data_path = "./data/test.jsonl"
+train_data_path = TRAIN_DATA_PATH
+val_data_path = VAL_DATA_PATH
+test_data_path = TEST_DATA_PATH
 
 train_dataset = BartDataset(train_data_path)
 val_dataset = BartDataset(val_data_path)
@@ -65,7 +66,7 @@ train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=b
 val_dataloader = DataLoader(val_dataset, sampler=val_sampler, batch_size=batch_size)
 
 # Load pre-trained BART model
-model = BartForConditionalGeneration.from_pretrained('facebook/bart-base')
+model = BartForConditionalGeneration.from_pretrained(MODEL_NAME)
 model.config.pad_token_id = tokenizer.pad_token_id
 
 model.cuda()
@@ -76,7 +77,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
 
 # Training loop
 for epoch in range(num_epochs):
-    print(f"Epoch {epoch + 1} of {num_epochs}")
+    print(f"Epoch {epoch} of {num_epochs}")
     model.train()
     total_loss = 0
     for batch in tqdm(train_dataloader):
@@ -110,18 +111,18 @@ for epoch in range(num_epochs):
 
     avg_val_loss = total_val_loss / len(val_dataloader)
 
-    print(f"Epoch {epoch + 1} - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
+    print(f"Epoch {epoch} - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
 
     # Adjust the learning rate
     scheduler.step()
 
 # Save the fine-tuned model
 output_dir = ".."
-model_dir = f'./model_save_bart'
+model_dir = MODEL_DIR
 if not os.path.exists(model_dir):
     os.makedirs(model_dir)
-torch.save(model.state_dict(), os.path.join(model_dir, 'bart_model.pt'))
-torch.save(optimizer.state_dict(), os.path.join(model_dir, 'optimizer.pt'))
+torch.save(model.state_dict(), os.path.join(model_dir, MODEL_FILE_NAME))
+torch.save(optimizer.state_dict(), os.path.join(model_dir, OPTIMIZER_FILE_NAME))
 model.save_pretrained(model_dir)
 tokenizer.save_pretrained(model_dir)
 
