@@ -5,6 +5,8 @@ from torch.utils.data import (DataLoader)
 # from pytorch_transformers import AdamW, WarmupLinearSchedule, T5Tokenizer
 from transformers import T5Tokenizer, T5ForConditionalGeneration, AdamW
 from transformers import get_linear_schedule_with_warmup
+from train_t5 import MODEL_NAME
+
 
 import preprocessing
 import nlp
@@ -86,6 +88,11 @@ def test(model, dataloader):
         preds = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in generated_ids]
 
         target = [tokenizer.decode(t, skip_special_tokens=True, clean_up_tokenization_spaces=True) for t in summary_input_ids]
+        print("preds:    ", preds)
+        print("\n")
+        print("target:   ", target)
+        print("\n")
+        print("\n")
         predictions.extend(preds)
         actual_summaries.extend(target)
 

@@ -6,11 +6,14 @@ import pandas as pd
 import torch
 import sentencepiece
 from torch.optim import AdamW
+import time
+
+
 
 from torch.utils.data import (DataLoader)
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 from transformers import get_linear_schedule_with_warmup
-from preprocessing import prepare_dataset, MODEL_NAME, BATCH_SIZE
+from preprocessing import prepare_dataset
 
 # STEP 0: GET THE DATA:
 train_df = pd.read_json("./data/train.jsonl", lines=True)
@@ -18,15 +21,34 @@ test_df = pd.read_json("./data/test.jsonl", lines=True)
 val_df = pd.read_json("./data/validation.jsonl", lines=True)
 
 # Set global variables:
-EPOCHS = 10
-THRESHOLD: int = 500
+EPOCHS = 15
+THRESHOLD: int = 350
 
-tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
+global MODEL_NAME
+MODEL_NAME = 't5-base'
+BATCH_SIZE = 4
+
+tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME,  model_max_length=512, truncation=True, padding=True)
 
 # Tensor datasets:
+
+print("Preparing train dataset...")
+start_time = time.time()
 train_dataset = prepare_dataset(train_df, tokenizer, THRESHOLD)
+end_time = time.time()
+print("Train dataset preparation time:", end_time - start_time, "seconds")
+
+print("Preparing val dataset...")
+start_time = time.time()
 val_dataset = prepare_dataset(val_df, tokenizer, THRESHOLD)
+end_time = time.time()
+print("Val dataset preparation time:", end_time - start_time, "seconds")
+
+print("Preparing test dataset...")
+start_time = time.time()
 test_dataset = prepare_dataset(test_df, tokenizer, THRESHOLD)
+end_time = time.time()
+print("Test dataset preparation time:", end_time - start_time, "seconds")
 
 print("Train data size: ", len(train_dataset))
 print("Val data size: ", len(val_dataset))
@@ -34,7 +56,7 @@ print("Test data size: ", len(test_dataset))
 
 # STEP 1: INSTANTIATE MODEL:
 model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
-optimizer = AdamW(model.parameters(), lr=3e-5) # lr = 5e-4
+optimizer = AdamW(model.parameters(), lr=1e-5) # lr = 5e-4, 3e-4
 
 dataloader = DataLoader(dataset=train_dataset, shuffle=True, batch_size=BATCH_SIZE)
 
@@ -67,6 +89,7 @@ def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, 
     if resume_from_checkpoint:
         load_checkpoint(model, optimizer, tokenizer, resume_from_checkpoint, model_name_pt)
         start_epoch = int(resume_from_checkpoint.split('_')[-1])
+        print("start epoch", start_epoch)
     else:
         start_epoch = 0
     for epoch in range(start_epoch, epochs):
@@ -87,9 +110,6 @@ def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, 
             # Unpack training batch from dataloader:
             doc_input_ids, doc_attention_masks = batch[0], batch[1]
             summary_input_ids, summary_attention_masks = batch[2], batch[3]
-
-            # Clear previously calculated gradients:
-            optimizer.zero_grad()
 
             outputs = model(input_ids=doc_input_ids,
                             attention_mask=doc_attention_masks,
@@ -167,12 +187,16 @@ def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, 
             save_checkpoint(model, optimizer, tokenizer, epoch, avg_val_loss)
 
         # Save the model if the validation loss is the best we've seen so far
-        if val_stats[epoch]['Validation Loss'] < best_val_loss:
-            best_val_loss = val_stats[epoch]['Validation Loss']
-            torch.save(model.state_dict(), f't5_model_{t0}.pt')
+        if epoch % 5 == 0:
+            if val_stats[-1]['Validation Loss'] < best_val_loss:
+                best_val_loss = val_stats[-1]['Validation Loss']
+                model_dir = f'./model_save_{MODEL_NAME}_{THRESHOLD}_{BATCH_SIZE}'
+                if not os.path.exists(model_dir):
+                    os.makedirs(model_dir)
+                torch.save(model.state_dict(), os.path.join(model_dir, f't5_model_{t0}.pt'))
 
-            model.save_pretrained(f'./model_save_{MODEL_NAME}_{THRESHOLD}/t5_{t0}/')
-            tokenizer.save_pretrained(f'./model_save_{MODEL_NAME}_{THRESHOLD}/t5_{t0}/')
+                model.save_pretrained(f'./model_save_{MODEL_NAME}_{THRESHOLD}_{BATCH_SIZE}/t5_{t0}/')
+                tokenizer.save_pretrained(f'./model_save_{MODEL_NAME}_{THRESHOLD}_{BATCH_SIZE}/t5_{t0}/')
 
         if early_stopper.early_stop(avg_val_loss):
             break
@@ -180,7 +204,7 @@ def train(model, batch_size, optimizer, epochs, scheduler, checkpoint_interval, 
 
 def save_checkpoint(model, optimizer, tokenizer, epoch, val_loss):
     # Create a directory to save the checkpoint
-    checkpoint_dir = f'./checkpoints_{MODEL_NAME}_{THRESHOLD}/epoch_{epoch}'
+    checkpoint_dir = f'./checkpoints_{MODEL_NAME}_{THRESHOLD}_{BATCH_SIZE}/epoch_{epoch}'
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -197,7 +221,8 @@ def save_checkpoint(model, optimizer, tokenizer, epoch, val_loss):
 def load_checkpoint(model, optimizer, tokenizer, checkpoint_dir, model_name_pt):
     # Load model state dict
     model.load_state_dict(torch.load(os.path.join(checkpoint_dir, model_name_pt)))
-    # model.to('mds')
+    #    model.load_state_dict(torch.load(os.path.join('./model_save_t5-base_250_4', model_name_pt)))
+
     # Load optimizer state dict
     optimizer.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'optimizer.pt')))
     # Load tokenizer
@@ -211,7 +236,7 @@ train_stats, val_stats = train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler, 
 # Call the train function with the checkpoint
 #train_stats, val_stats = train(model, BATCH_SIZE, optimizer, EPOCHS, scheduler, checkpoint_interval=1, resume_from_checkpoint=checkpoint_dir)
 # Save the train and validation stats
-with open(f'checkpoints_{MODEL_NAME}_{THRESHOLD}/train_stats.json', 'w') as f:
+with open(f'checkpoints_{MODEL_NAME}_{THRESHOLD}_{BATCH_SIZE}/train_stats.json', 'w') as f:
     json.dump(train_stats, f)
-with open(f'checkpoints_{MODEL_NAME}_{THRESHOLD}/val_stats.json', 'w') as f:
+with open(f'checkpoints_{MODEL_NAME}_{THRESHOLD}_{BATCH_SIZE}/val_stats.json', 'w') as f:
     json.dump(val_stats, f)
