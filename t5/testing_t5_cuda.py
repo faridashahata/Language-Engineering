@@ -11,7 +11,7 @@ train_df = pd.read_json(TRAIN_DATA_PATH, lines=True)
 test_df = pd.read_json(TEST_DATA_PATH, lines=True)
 val_df = pd.read_json(VAL_DATA_PATH, lines=True)
 
-tokenizer = T5Tokenizer.from_pretrained('t5-base')
+tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
 
 # Tensor datasets:
 train_dataset = prepare_dataset(train_df, tokenizer, THRESHOLD)
@@ -25,7 +25,7 @@ print("Test data size: ", len(test_dataset))
 # Set up the testing dataloader:
 dataloader = DataLoader(dataset=test_dataset,
                         shuffle=False,
-                        batch_size=2)
+                        batch_size=BATCH_SIZE)
 
 test_stats = []
 
@@ -56,8 +56,8 @@ def test(model, dataloader):
 
         outputs = model(input_ids=doc_input_ids,
                         attention_mask=doc_attention_masks,
-                        labels=summary_input_ids
-                        , decoder_attention_mask=summary_attention_masks)
+                        labels=summary_input_ids,
+                        decoder_attention_mask=summary_attention_masks)
 
         loss, pred_scores = outputs[:2]
 
@@ -108,8 +108,8 @@ def test(model, dataloader):
 
 
 # LOAD MODEL:
-model = T5ForConditionalGeneration.from_pretrained('t5-base').cuda()
-model.load_state_dict(torch.load('./model_save_t5-base_250_4/t5_model_16:11:52.pt'))
+model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME).cuda()
+model.load_state_dict(torch.load(MODEL_TO_TEST))
 
 test_stats = test(model, dataloader)
 print("test stats: ", test_stats)
