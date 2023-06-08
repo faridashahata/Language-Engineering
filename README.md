@@ -1,6 +1,6 @@
 # DD2418 Language Engineering Project - Movie Summarization
 
-This project is a part of the DD2418 Language Engineering course at KTH. The goal of the project is to fine-tune Torch T5 and BART models using the Narrasum dataset to improve the summarization of text describing movies.
+This project is a part of the DD2418 Language Engineering course at KTH. The goal of the project is to build a narrative text summarizer by fine-tuning Transformers (namely, Torch T5 and BART models), to generate movie and TV episode summaries out of corresonding plots.
 
 ## Project Overview
 
